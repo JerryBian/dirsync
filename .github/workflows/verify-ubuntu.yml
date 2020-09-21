@@ -1,0 +1,42 @@
+name: Verify under Ubuntu
+
+on:
+  push:
+    branches: [ master ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Setup .NET Core
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: 3.1.402
+    - name: Install dependencies
+      run: |
+        dotnet restore
+        dotnet tool install --global dotnet-reportgenerator-globaltool
+    - name: Build
+      run: dotnet build --configuration Release --no-restore
+    - name: Test
+      run: dotnet test --collect:"XPlat Code Coverage" --no-restore --verbosity normal
+    - name: Copy coverage xml
+      run: |
+        mkdir -p __ga __ga/coveragereport
+        cd test/DirSync.Test/TestResults/*
+        cp coverage.cobertura.xml ../../../../__ga/coverage.cobertura.xml
+    - name: Generate coverage report
+      run: |
+        reportgenerator "-reports:__ga/coverage.cobertura.xml" "-targetdir:__ga/coveragereport" -reporttypes:HtmlInline
+    - uses: actions/upload-artifact@v2
+      name: upload test coverage xml
+      with:
+        name: coverage.cobertura-ubuntu.xml
+        path: __ga/coverage.cobertura.xml
+    - uses: actions/upload-artifact@v2
+      name: upload test coverage report
+      with:
+        name: coverage-report-ubuntu.zip
+        path: __ga/coveragereport/**

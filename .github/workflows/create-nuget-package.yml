@@ -1,0 +1,36 @@
+name: Create NuGet package
+
+on:
+  push:
+    branches: [ master ]
+    paths: ['Directory.Build.props']
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Setup .NET Core
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: 3.1.402
+    - name: Install dependencies
+      run: |
+        dotnet restore
+        sudo wget -q https://packages.microsoft.com/config/ubuntu/18.04/packages-microsoft-prod.deb
+        sudo dpkg -i packages-microsoft-prod.deb
+        sudo apt-get update -y
+        sudo add-apt-repository universe
+        sudo apt-get install -y powershell
+        sudo apt-get install -y zip unzip tar libxml2-utils
+    - name: Set env variables
+      run: |
+        APP_VERSION=`xmllint --xpath "/Project/PropertyGroup/Version/text()" Directory.Build.props`
+        echo "::set-env name=APP_VERSION::$APP_VERSION"
+        echo "::set-env name=NugetApiKey::${{ secrets.NugetApiKey }}"
+    - name: Publish Nuget packages
+      run: |
+        cd ./script
+        pwsh -File push-nuget-pkg.ps1 -Version "${{ env.APP_VERSION }}"
+        cd ..

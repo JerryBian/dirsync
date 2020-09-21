@@ -1,0 +1,57 @@
+name: Create docker image
+
+on:
+  push:
+    branches: [ master ]
+    paths: ['Directory.Build.props']
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Setup .NET Core
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: 3.1.402
+    - name: Install dependencies
+      run: |
+        dotnet restore
+        sudo apt-get install -y zip unzip tar libxml2-utils
+    - name: Set env variables
+      run: |
+        APP_VERSION=`xmllint --xpath "/Project/PropertyGroup/Version/text()" Directory.Build.props`
+        echo "::set-env name=APP_VERSION::$APP_VERSION"
+    - name: Publish Binaries
+      run: |
+        mkdir -p __ga
+        dotnet publish ./src/DirSync.csproj /p:DebugType=None -p:PublishTrimmed=true -p:PublishSingleFile=true -r linux-musl-x64 -c Release -o __ga/linux-musl-x64 --self-contained
+    -
+      name: Login to DockerHub
+      if: success() && github.event_name != 'pull_request'
+      uses: docker/login-action@v1
+      with:
+        username: ${{ secrets.DockerUserName }}
+        password: ${{ secrets.DockerPassword }}
+    -
+      name: Set up Docker Buildx
+      id: buildx
+      uses: crazy-max/ghaction-docker-buildx@v3
+      with:
+        buildx-version: latest
+        qemu-version: latest
+    -
+      name: Available platforms
+      run: echo ${{ steps.buildx.outputs.platforms }}
+    -
+      name: Run Buildx
+      run: |
+        cd __ga/linux-musl-x64
+        cp ../../Dockerfile ./Dockerfile
+        cp ../../script/docker-run.sh ./docker-run.sh
+        docker buildx build \
+        --platform linux/386,linux/amd64,linux/arm/v6,linux/arm/v7,linux/arm64,linux/ppc64le,linux/s390x \
+        --push \
+        --tag cnbian/dirsync:${{ env.APP_VERSION }} --tag cnbian/dirsync:latest .
+    
