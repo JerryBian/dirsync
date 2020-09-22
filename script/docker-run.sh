@@ -1,8 +1,8 @@
 #!/bin/sh
 
 chmod +x ./dirsync
+mkdir -p /app/log
 if [[ ! -z "$CRON_EXP" ]]; then
-  mkdir -p /app/log
   (crontab -l ; echo "$CRON_EXP /app/dirsync $@ > /app/log/dirsync-cron.log 2>&1") | crontab -
   /usr/sbin/crond -b -L /app/log/cron.log
 fi

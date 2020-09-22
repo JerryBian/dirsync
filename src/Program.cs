@@ -16,6 +16,7 @@ namespace DirSync
 
         private static async Task Main(string[] args)
         {
+            Debugger.Launch();
             Console.CancelKeyPress += ConsoleOnCancelKeyPress;
             Process.GetCurrentProcess().Exited += OnExited;
             AppDomain.CurrentDomain.ProcessExit += CurrentDomainOnProcessExit;

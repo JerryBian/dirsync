@@ -56,7 +56,8 @@ namespace DirSync.Core
                         copyInProgress(copyProgressInfo);
                         if (TotalBytes > copiedBytes)
                         {
-                            buffer = new byte[Convert.ToInt32(copyProgressInfo.CopiedRatesInBytes * 1000)];
+                            var rates = Convert.ToInt32(copyProgressInfo.CopiedRatesInBytes * 1000);
+                            buffer = new byte[Math.Min(1024 * 1024 * 10, rates)];
                         }
                     }
                 }

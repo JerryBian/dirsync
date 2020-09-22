@@ -88,7 +88,18 @@ namespace DirSync.Core
 
             result.EndCursorLeft = 0;
             result.EndCursorTop += 1;
+            AdjustCursor(result);
             return result;
+        }
+
+        private static void AdjustCursor(ConsoleMessageResult result)
+        {
+            var endTopDiff = result.EndCursorTop - Console.WindowHeight;
+            if (endTopDiff >= 0)
+            {
+                result.EndCursorTop = Console.WindowHeight - 1;
+                result.StartCursorTop = result.StartCursorTop - endTopDiff - 1;
+            }
         }
     }
 }
