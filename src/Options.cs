@@ -21,7 +21,6 @@ namespace DirSync
         [Option('s', "strict", HelpText = "Do binary check of target files if already exists.")]
         public bool Strict { get; set; }
 
-        [Usage(ApplicationAlias = "dirsync")]
-        public static IEnumerable<Example> Examples => new Example[]{};
+        [Usage(ApplicationAlias = "dirsync")] public static IEnumerable<Example> Examples => new Example[] { };
     }
 }

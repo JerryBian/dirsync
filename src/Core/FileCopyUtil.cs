@@ -3,15 +3,14 @@ using System.Diagnostics;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
-using DirSync.Model;
 
 namespace DirSync.Core
 {
     public class FileCopyUtil
     {
+        private readonly bool _overwrite;
         private readonly string _src;
         private readonly string _target;
-        private readonly bool _overwrite;
 
         public FileCopyUtil(string src, string target, bool overwrite)
         {
@@ -23,7 +22,7 @@ namespace DirSync.Core
         public long TotalBytes { get; set; }
 
         public async Task CopyAsync(
-            Action<CopyProgressInfo> copyInProgress,
+            Action copyStarted,
             Action<Exception> copyCompleted,
             CancellationToken cancellationToken = default)
         {
@@ -42,21 +41,16 @@ namespace DirSync.Core
                     int currentBlockSize;
                     var buffer = new byte[1024 * 1024 * 10];
 
+                    copyStarted();
                     while ((currentBlockSize = await source.ReadAsync(buffer, 0, buffer.Length, cancellationToken)) > 0)
                     {
                         copiedBytes += currentBlockSize;
                         var stopwatch = Stopwatch.StartNew();
                         await dest.WriteAsync(buffer, 0, currentBlockSize, cancellationToken);
                         stopwatch.Stop();
-                        var copyProgressInfo = new CopyProgressInfo(TotalBytes, copiedBytes)
-                        {
-                            ElapsedMilliseconds = stopwatch.ElapsedMilliseconds,
-                            CurrentBlockSize = currentBlockSize
-                        };
-                        copyInProgress(copyProgressInfo);
                         if (TotalBytes > copiedBytes)
                         {
-                            var rates = Convert.ToInt32(copyProgressInfo.CopiedRatesInBytes * 1000);
+                            var rates = Convert.ToInt64(currentBlockSize / stopwatch.Elapsed.TotalSeconds);
                             buffer = new byte[Math.Min(1024 * 1024 * 10, rates)];
                         }
                     }

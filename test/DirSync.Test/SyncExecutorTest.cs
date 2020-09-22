@@ -8,10 +8,10 @@ namespace DirSync.Test
 {
     public class SyncExecutorTest : IDisposable
     {
+        private readonly SyncExecutor _executor;
+        private readonly Options _options;
         private readonly string _src;
         private readonly string _target;
-        private readonly Options _options;
-        private readonly SyncExecutor _executor;
 
         public SyncExecutorTest()
         {

@@ -16,7 +16,7 @@ namespace DirSync
 
         private static async Task Main(string[] args)
         {
-            Debugger.Launch();
+            //Debugger.Launch();
             Console.CancelKeyPress += ConsoleOnCancelKeyPress;
             Process.GetCurrentProcess().Exited += OnExited;
             AppDomain.CurrentDomain.ProcessExit += CurrentDomainOnProcessExit;
@@ -35,7 +35,8 @@ namespace DirSync
             await parser.ParseArguments<Options>(args).WithParsedAsync(ExecuteAsync);
         }
 
-        private static async void TaskSchedulerOnUnobservedTaskException(object? sender, UnobservedTaskExceptionEventArgs e)
+        private static async void TaskSchedulerOnUnobservedTaskException(object? sender,
+            UnobservedTaskExceptionEventArgs e)
         {
             await Console.Error.WriteLineAsync($"Unobserved error: {e.Exception?.Message}");
             e.SetObserved();
@@ -75,7 +76,7 @@ namespace DirSync
             var executor = new SyncExecutor(options, CancellationTokenSource.Token)
             {
                 Logger = new ConsoleLogger(),
-                ProgressBarType = typeof(ConsoleProgressBar)
+                ProgressBarType = typeof(ConsoleCopyProgress)
             };
             await executor.ExecuteAsync();
         }

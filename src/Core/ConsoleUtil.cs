@@ -6,39 +6,10 @@ namespace DirSync.Core
 {
     public class ConsoleUtil
     {
-        public static async Task ClearLinesAsync(int startCursorTop, int endCursorTop, bool stdErr = false)
-        {
-            for (var i = startCursorTop; i <= endCursorTop; i++)
-            {
-                SetCursorPosition(0, i);
-                if (stdErr)
-                {
-                    await Console.Error.WriteAsync(new string(' ', Math.Max(Console.BufferWidth, Console.WindowWidth)));
-                }
-                else
-                {
-                    await Console.Out.WriteAsync(new string(' ', Math.Max(Console.BufferWidth, Console.WindowWidth)));
-                }
-            }
-
-            SetCursorPosition(0, startCursorTop);
-        }
-
-        public static void SetCursorPosition(int cursorLeft, int cursorTop)
-        {
-            Console.SetCursorPosition(cursorLeft, cursorTop);
-        }
-
-        public static async Task<ConsoleMessageResult> WriteAsync(
+        public static async Task WriteAsync(
             bool stdErr = false,
             params ConsoleMessage[] messages)
         {
-            var result = new ConsoleMessageResult
-            {
-                StartCursorLeft = Console.CursorLeft,
-                StartCursorTop = Console.CursorTop
-            };
-
             foreach (var consoleMessage in messages)
             {
                 if (consoleMessage.BackgroundColor.HasValue)
@@ -66,17 +37,13 @@ namespace DirSync.Core
                     Console.ResetColor();
                 }
             }
-
-            result.EndCursorLeft = Console.CursorLeft;
-            result.EndCursorTop = Console.CursorTop;
-            return result;
         }
 
-        public static async Task<ConsoleMessageResult> WriteLineAsync(
+        public static async Task WriteLineAsync(
             bool stdErr = false,
             params ConsoleMessage[] messages)
         {
-            var result = await WriteAsync(stdErr, messages);
+            await WriteAsync(stdErr, messages);
             if (stdErr)
             {
                 await Console.Error.WriteAsync(Environment.NewLine);
@@ -84,21 +51,6 @@ namespace DirSync.Core
             else
             {
                 await Console.Out.WriteAsync(Environment.NewLine);
-            }
-
-            result.EndCursorLeft = 0;
-            result.EndCursorTop += 1;
-            AdjustCursor(result);
-            return result;
-        }
-
-        private static void AdjustCursor(ConsoleMessageResult result)
-        {
-            var endTopDiff = result.EndCursorTop - Console.WindowHeight;
-            if (endTopDiff >= 0)
-            {
-                result.EndCursorTop = Console.WindowHeight - 1;
-                result.StartCursorTop = result.StartCursorTop - endTopDiff - 1;
             }
         }
     }

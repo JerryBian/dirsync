@@ -4,9 +4,9 @@ using DirSync.Interface;
 
 namespace DirSync.Reporter
 {
-    public class VoidProgressBar : IProgressBar
+    public class VoidCopyProgress : ICopyProgress
     {
-        public async Task TickAsync(TimeSpan elapsed, long copiedBytes, long totalBytes, double ratesInBytesPerMs)
+        public async Task CompleteAsync(string message, TimeSpan elapsed, double ratesInBytesPerMs)
         {
             await Task.CompletedTask;
         }

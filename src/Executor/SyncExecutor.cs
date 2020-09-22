@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using ByteSizeLib;
 using DirSync.Core;
 using DirSync.Interface;
 using DirSync.Model;
@@ -13,15 +14,15 @@ namespace DirSync.Executor
 {
     public class SyncExecutor : IExecutor
     {
-        private readonly Options _options;
-        private readonly ConcurrentQueue<FileSyncInfo> _filSyncQueue;
-        private readonly ConcurrentQueue<CleanupInfo> _cleanupQueue;
-        private readonly Task _syncTask;
-        private readonly Task _cleanupTask;
         private readonly CancellationToken _cancellationToken;
+        private readonly ConcurrentQueue<CleanupInfo> _cleanupQueue;
+        private readonly Task _cleanupTask;
+        private readonly ConcurrentQueue<FileSyncInfo> _filSyncQueue;
+        private readonly Options _options;
+        private readonly Task _syncTask;
+        private int _affectedFiles;
 
         private bool _markAsCompleted;
-        private int _affectedFiles;
         private int _srcDirCount;
         private int _srcFileCount;
 
@@ -33,6 +34,46 @@ namespace DirSync.Executor
             _cleanupQueue = new ConcurrentQueue<CleanupInfo>();
             _syncTask = CreateSyncTask();
             _cleanupTask = CreateCleanupTask();
+        }
+
+        public ILogger Logger { get; set; } = new VoidLogger();
+
+        public Type ProgressBarType { get; set; } = typeof(VoidCopyProgress);
+
+        public async Task<ExecutorResult> ExecuteAsync()
+        {
+            var stopwatch = Stopwatch.StartNew();
+            var executorResult = new ExecutorResult(_options.SourceDir, _options.TargetDir);
+            try
+            {
+                await ExecuteCoreAsync(_options.SourceDir, _options.TargetDir, _options.Force, _options.Strict);
+                if (_options.Cleanup)
+                {
+                    CleanupTargetDir(_options.SourceDir, _options.TargetDir);
+                }
+
+                _markAsCompleted = true;
+                await Task.WhenAll(_syncTask, _cleanupTask);
+                executorResult.Succeed = true;
+                executorResult.TargetAffectedFileCount = _affectedFiles;
+                executorResult.SrcDirCount = _srcDirCount;
+                executorResult.SrcFileCount = _srcFileCount;
+
+                if (!_cancellationToken.IsCancellationRequested)
+                {
+                    await Logger.InfoAsync($"Process completed. Elapsed: {stopwatch.Elapsed:hh\\:mm\\:ss}");
+                }
+            }
+            catch (Exception ex)
+            {
+                executorResult.Succeed = false;
+                executorResult.Error = ex;
+                await Logger.ErrorAsync("Process failed", ex);
+            }
+
+            stopwatch.Stop();
+            executorResult.Took = stopwatch.Elapsed;
+            return executorResult;
         }
 
         private Task CreateCleanupTask()
@@ -91,35 +132,35 @@ namespace DirSync.Executor
                     var currentFile = Path.GetRelativePath(_options.SourceDir, fileSyncInfo.Src);
                     try
                     {
-                        if (!(Activator.CreateInstance(ProgressBarType) is IProgressBar bar))
+                        if (!(Activator.CreateInstance(ProgressBarType) is ICopyProgress bar))
                         {
                             throw new ApplicationException($"Invalid progress bar implementation: {ProgressBarType}");
                         }
 
-                        await bar.InitAsync(currentFile);
                         var fileCopyUtil =
                             new FileCopyUtil(fileSyncInfo.Src, fileSyncInfo.Target, fileSyncInfo.Overwrite);
+
                         var stopwatch = Stopwatch.StartNew();
-                        await fileCopyUtil.CopyAsync(async p =>
-                        {
-                            await bar.TickAsync(stopwatch.Elapsed, p.CopiedBytes, p.TotalBytes,
-                                p.CopiedRatesInBytes);
-                        }, async e =>
-                        {
-                            await bar.TickAsync(
-                                stopwatch.Elapsed, 
-                                fileCopyUtil.TotalBytes, 
-                                fileCopyUtil.TotalBytes,
-                                (double)fileCopyUtil.TotalBytes / stopwatch.ElapsedMilliseconds);
-                            if (e != null)
+                        await fileCopyUtil.CopyAsync(
+                            async () =>
                             {
-                                await Logger.ErrorAsync($"Error while copying {currentFile}: {e.Message}");
-                            }
-                            else
+                                await bar.InitAsync($"{currentFile} ({ByteSize.FromBytes(fileCopyUtil.TotalBytes)})");
+                            },
+                            async e =>
                             {
-                                Interlocked.Increment(ref _affectedFiles);
-                            }
-                        }, _cancellationToken);
+                                if (e != null)
+                                {
+                                    await Logger.ErrorAsync($"Error while copying {currentFile}: {e.Message}");
+                                }
+                                else
+                                {
+                                    await bar.CompleteAsync(
+                                        "Finished",
+                                        stopwatch.Elapsed,
+                                        (double) fileCopyUtil.TotalBytes / stopwatch.ElapsedMilliseconds);
+                                    Interlocked.Increment(ref _affectedFiles);
+                                }
+                            }, _cancellationToken);
                     }
                     catch (Exception ex)
                     {
@@ -167,46 +208,6 @@ namespace DirSync.Executor
                     });
                 }
             }
-        }
-
-        public ILogger Logger { get; set; } = new VoidLogger();
-
-        public Type ProgressBarType { get; set; } = typeof(VoidProgressBar);
-
-        public async Task<ExecutorResult> ExecuteAsync()
-        {
-            var stopwatch = Stopwatch.StartNew();
-            var executorResult = new ExecutorResult(_options.SourceDir, _options.TargetDir);
-            try
-            {
-                await ExecuteCoreAsync(_options.SourceDir, _options.TargetDir, _options.Force, _options.Strict);
-                if (_options.Cleanup)
-                {
-                    CleanupTargetDir(_options.SourceDir, _options.TargetDir);
-                }
-
-                _markAsCompleted = true;
-                await Task.WhenAll(_syncTask, _cleanupTask);
-                executorResult.Succeed = true;
-                executorResult.TargetAffectedFileCount = _affectedFiles;
-                executorResult.SrcDirCount = _srcDirCount;
-                executorResult.SrcFileCount = _srcFileCount;
-
-                if (!_cancellationToken.IsCancellationRequested)
-                {
-                    await Logger.InfoAsync("Process completed.");
-                }
-            }
-            catch (Exception ex)
-            {
-                executorResult.Succeed = false;
-                executorResult.Error = ex;
-                await Logger.ErrorAsync("Process failed", ex);
-            }
-
-            stopwatch.Stop();
-            executorResult.Took = stopwatch.Elapsed;
-            return executorResult;
         }
 
         private async Task ExecuteCoreAsync(string src, string target, bool overwrite, bool strict)

@@ -4,7 +4,8 @@ namespace DirSync.Model
 {
     public class ConsoleMessage
     {
-        public ConsoleMessage(string message, ConsoleColor? foregroundColor = null, ConsoleColor? backgroundColor = null)
+        public ConsoleMessage(string message, ConsoleColor? foregroundColor = null,
+            ConsoleColor? backgroundColor = null)
         {
             Message = message;
             ForegroundColor = foregroundColor;
