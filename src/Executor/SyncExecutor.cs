@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using ByteSizeLib;
@@ -9,6 +11,7 @@ using DirSync.Core;
 using DirSync.Interface;
 using DirSync.Model;
 using DirSync.Reporter;
+using DotNet.Globbing;
 
 namespace DirSync.Executor
 {
@@ -20,6 +23,8 @@ namespace DirSync.Executor
         private readonly ConcurrentQueue<FileSyncInfo> _filSyncQueue;
         private readonly Options _options;
         private readonly Task _syncTask;
+        private List<Glob> _includePatterns;
+        private List<Glob> _excludePatterns;
         private int _affectedFiles;
 
         private bool _markAsCompleted;
@@ -213,6 +218,30 @@ namespace DirSync.Executor
         private async Task ExecuteCoreAsync(string src, string target, bool overwrite, bool strict)
         {
             _cancellationToken.ThrowIfCancellationRequested();
+            if (_options.Include != null && _options.Include.Any())
+            {
+                _includePatterns = new List<Glob>();
+                foreach (var includePattern in _options.Include)
+                {
+                    if (!string.IsNullOrWhiteSpace(includePattern))
+                    {
+                        _includePatterns.Add(Glob.Parse(includePattern));
+                    }
+                }
+            }
+
+            if (_options.Exclude != null && _options.Exclude.Any())
+            {
+                _excludePatterns = new List<Glob>();
+                foreach (var excludePattern in _options.Exclude)
+                {
+                    if (!string.IsNullOrWhiteSpace(excludePattern))
+                    {
+                        _excludePatterns.Add(Glob.Parse(excludePattern));
+                    }
+                }
+            }
+
             Directory.CreateDirectory(target);
             foreach (var dir in Directory.EnumerateDirectories(src, "*", SearchOption.TopDirectoryOnly))
             {
@@ -225,6 +254,43 @@ namespace DirSync.Executor
             {
                 _cancellationToken.ThrowIfCancellationRequested();
                 _srcFileCount++;
+
+                if (_excludePatterns != null && _excludePatterns.Any())
+                {
+                    var matched = false;
+                    foreach (var excludePattern in _excludePatterns)
+                    {
+                        if (excludePattern.IsMatch(Path.GetFileName(file)))
+                        {
+                            matched = true;
+                            break;
+                        }
+                    }
+
+                    if (matched)
+                    {
+                        continue;
+                    }
+                }
+
+                if (_includePatterns != null && _includePatterns.Any())
+                {
+                    var matched = false;
+                    foreach (var includePattern in _includePatterns)
+                    {
+                        if (includePattern.IsMatch(Path.GetFileName(file)))
+                        {
+                            matched = true;
+                            break;
+                        }
+                    }
+
+                    if (!matched)
+                    {
+                        continue;
+                    }
+                }
+
                 var targetFilePath = Path.Combine(target, Path.GetFileName(file));
                 var syncInfo = new FileSyncInfo(file, targetFilePath);
                 if (!File.Exists(targetFilePath))

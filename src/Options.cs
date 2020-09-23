@@ -21,6 +21,12 @@ namespace DirSync
         [Option('s', "strict", HelpText = "Do binary check of target files if already exists.")]
         public bool Strict { get; set; }
 
+        [Option('i', "include", HelpText = "Do binary check of target files if already exists.", Separator = ' ')]
+        public IEnumerable<string> Include { get; set; }
+
+        [Option('e', "exclude", HelpText = "Do binary check of target files if already exists.", Separator = ' ')]
+        public IEnumerable<string> Exclude { get; set; }
+
         [Usage(ApplicationAlias = "dirsync")] public static IEnumerable<Example> Examples => new Example[] { };
     }
 }

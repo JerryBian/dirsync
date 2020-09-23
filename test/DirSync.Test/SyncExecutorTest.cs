@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
 using DirSync.Executor;
@@ -179,6 +180,55 @@ namespace DirSync.Test
             Assert.Equal(0, executorResult.SrcDirCount);
             Assert.Equal(9, executorResult.SrcFileCount);
             Assert.Equal(9, Directory.GetFiles(_target).Length);
+        }
+
+        [Fact]
+        public async Task Test10_Include()
+        {
+            await TestHelper.CreateRandomFileAsync(_target, 5, 6, new byte[1000 * 1000]);
+            await TestHelper.CreateRandomFileAsync(_target, 6, 10, new byte[1000]);
+            await TestHelper.CreateRandomFileAsync(_src, 1, 10, new byte[1000]);
+
+            _options.Include = new List<string>{"2*", "3*"};
+            var executorResult = await _executor.ExecuteAsync();
+            Assert.True(executorResult.Succeed);
+            Assert.Equal(2, executorResult.TargetAffectedFileCount);
+            Assert.Equal(0, executorResult.SrcDirCount);
+            Assert.Equal(9, executorResult.SrcFileCount);
+            Assert.Equal(7, Directory.GetFiles(_target).Length);
+        }
+
+        [Fact]
+        public async Task Test11_Exclude()
+        {
+            await TestHelper.CreateRandomFileAsync(_target, 5, 6, new byte[1000 * 1000]);
+            await TestHelper.CreateRandomFileAsync(_target, 6, 10, new byte[1000]);
+            await TestHelper.CreateRandomFileAsync(_src, 1, 10, new byte[1000]);
+
+            _options.Exclude = new List<string> { "2*" };
+            var executorResult = await _executor.ExecuteAsync();
+            Assert.True(executorResult.Succeed);
+            Assert.Equal(3, executorResult.TargetAffectedFileCount);
+            Assert.Equal(0, executorResult.SrcDirCount);
+            Assert.Equal(9, executorResult.SrcFileCount);
+            Assert.Equal(8, Directory.GetFiles(_target).Length);
+        }
+
+        [Fact]
+        public async Task Test12_Include_Exclude()
+        {
+            await TestHelper.CreateRandomFileAsync(_target, 5, 6, new byte[1000 * 1000]);
+            await TestHelper.CreateRandomFileAsync(_target, 6, 10, new byte[1000]);
+            await TestHelper.CreateRandomFileAsync(_src, 1, 18, new byte[1000]);
+
+            _options.Exclude = new List<string> { "12*" };
+            _options.Include = new List<string> { "2*" };
+            var executorResult = await _executor.ExecuteAsync();
+            Assert.True(executorResult.Succeed);
+            Assert.Equal(1, executorResult.TargetAffectedFileCount);
+            Assert.Equal(0, executorResult.SrcDirCount);
+            Assert.Equal(17, executorResult.SrcFileCount);
+            Assert.Equal(6, Directory.GetFiles(_target).Length);
         }
     }
 }
