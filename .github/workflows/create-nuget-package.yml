@@ -34,7 +34,10 @@ jobs:
         cd ./script
         pwsh -File push-nuget-pkg.ps1 -Version "${{ env.APP_VERSION }}"
         cd ..
-    - name: Publish Nuget packages to GitHub
-      run: |
-        dotnet nuget add source https://nuget.pkg.github.com/JerryBian/index.json -n github -u JerryBian -p ${{ secrets.AccessToken }} --store-password-in-clear-text
-        dotnet nuget push "./__nupkg/${{ env.APP_VERSION }}/dirsync.${{ env.APP_VERSION }}.nupkg" --source "github"
+    - name: Push to GitHub registry
+      uses: tanaka-takayoshi/nuget-publish-to-github-packages-action@v2.1
+      with:
+        nupkg-path:  './__nupkg/${{ env.APP_VERSION }}/dirsync.${{ env.APP_VERSION }}.nupkg'
+        repo-owner:  'JerryBian'
+        gh-user:  'JerryBian'
+        token:  ${{ secrets.AccessToken }}
