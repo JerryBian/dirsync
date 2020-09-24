@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Diagnostics;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
@@ -36,24 +35,9 @@ namespace DirSync.Core
                         File.Delete(_target);
                     }
 
-                    await using var dest = new FileStream(_target, FileMode.CreateNew, FileAccess.Write);
-                    var copiedBytes = 0L;
-                    int currentBlockSize;
-                    var buffer = new byte[1024 * 1024 * 10];
-
+                    await using var dest = new FileStream(_target, FileMode.Create, FileAccess.Write);
                     copyStarted();
-                    while ((currentBlockSize = await source.ReadAsync(buffer, 0, buffer.Length, cancellationToken)) > 0)
-                    {
-                        copiedBytes += currentBlockSize;
-                        var stopwatch = Stopwatch.StartNew();
-                        await dest.WriteAsync(buffer, 0, currentBlockSize, cancellationToken);
-                        stopwatch.Stop();
-                        if (TotalBytes > copiedBytes)
-                        {
-                            var rates = Convert.ToInt64(currentBlockSize / stopwatch.Elapsed.TotalSeconds);
-                            buffer = new byte[Math.Min(1024 * 1024 * 10, rates)];
-                        }
-                    }
+                    await source.CopyToAsync(dest, cancellationToken);
                 }
 
                 copyCompleted(null);

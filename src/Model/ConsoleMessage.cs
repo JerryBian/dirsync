@@ -17,5 +17,7 @@ namespace DirSync.Model
         public ConsoleColor? ForegroundColor { get; set; }
 
         public ConsoleColor? BackgroundColor { get; set; }
+
+        public DateTime Timestamp { get; set; } = DateTime.Now;
     }
 }

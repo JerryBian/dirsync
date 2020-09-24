@@ -189,7 +189,7 @@ namespace DirSync.Test
             await TestHelper.CreateRandomFileAsync(_target, 6, 10, new byte[1000]);
             await TestHelper.CreateRandomFileAsync(_src, 1, 10, new byte[1000]);
 
-            _options.Include = new List<string>{"2*", "3*"};
+            _options.Include = new List<string> {"2*", "3*"};
             var executorResult = await _executor.ExecuteAsync();
             Assert.True(executorResult.Succeed);
             Assert.Equal(2, executorResult.TargetAffectedFileCount);
@@ -205,7 +205,7 @@ namespace DirSync.Test
             await TestHelper.CreateRandomFileAsync(_target, 6, 10, new byte[1000]);
             await TestHelper.CreateRandomFileAsync(_src, 1, 10, new byte[1000]);
 
-            _options.Exclude = new List<string> { "2*" };
+            _options.Exclude = new List<string> {"2*"};
             var executorResult = await _executor.ExecuteAsync();
             Assert.True(executorResult.Succeed);
             Assert.Equal(3, executorResult.TargetAffectedFileCount);
@@ -221,8 +221,8 @@ namespace DirSync.Test
             await TestHelper.CreateRandomFileAsync(_target, 6, 10, new byte[1000]);
             await TestHelper.CreateRandomFileAsync(_src, 1, 18, new byte[1000]);
 
-            _options.Exclude = new List<string> { "12*" };
-            _options.Include = new List<string> { "2*" };
+            _options.Exclude = new List<string> {"12*"};
+            _options.Include = new List<string> {"2*"};
             var executorResult = await _executor.ExecuteAsync();
             Assert.True(executorResult.Succeed);
             Assert.Equal(1, executorResult.TargetAffectedFileCount);

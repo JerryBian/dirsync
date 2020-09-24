@@ -23,9 +23,9 @@ namespace DirSync.Executor
         private readonly ConcurrentQueue<FileSyncInfo> _filSyncQueue;
         private readonly Options _options;
         private readonly Task _syncTask;
-        private List<Glob> _includePatterns;
-        private List<Glob> _excludePatterns;
         private int _affectedFiles;
+        private List<Glob> _excludePatterns;
+        private List<Glob> _includePatterns;
 
         private bool _markAsCompleted;
         private int _srcDirCount;
@@ -51,6 +51,7 @@ namespace DirSync.Executor
             var executorResult = new ExecutorResult(_options.SourceDir, _options.TargetDir);
             try
             {
+                CreateGlobPatterns();
                 await ExecuteCoreAsync(_options.SourceDir, _options.TargetDir, _options.Force, _options.Strict);
                 if (_options.Cleanup)
                 {
@@ -81,6 +82,33 @@ namespace DirSync.Executor
             return executorResult;
         }
 
+        private void CreateGlobPatterns()
+        {
+            if (_options.Include != null && _options.Include.Any())
+            {
+                _includePatterns = new List<Glob>();
+                foreach (var includePattern in _options.Include)
+                {
+                    if (!string.IsNullOrWhiteSpace(includePattern))
+                    {
+                        _includePatterns.Add(Glob.Parse(includePattern));
+                    }
+                }
+            }
+
+            if (_options.Exclude != null && _options.Exclude.Any())
+            {
+                _excludePatterns = new List<Glob>();
+                foreach (var excludePattern in _options.Exclude)
+                {
+                    if (!string.IsNullOrWhiteSpace(excludePattern))
+                    {
+                        _excludePatterns.Add(Glob.Parse(excludePattern));
+                    }
+                }
+            }
+        }
+
         private Task CreateCleanupTask()
         {
             var task = Task.Run(async () =>
@@ -98,23 +126,35 @@ namespace DirSync.Executor
                         continue;
                     }
 
-                    if (cleanupInfo.IsFile)
+                    try
                     {
-                        if (File.Exists(cleanupInfo.FullPath))
-                        {
-                            File.Delete(cleanupInfo.FullPath);
-                        }
-
-                        Interlocked.Increment(ref _affectedFiles);
+                        CleanupCore(cleanupInfo);
                     }
-                    else
+                    catch (Exception ex)
                     {
-                        Directory.Delete(cleanupInfo.FullPath, true);
+                        await Logger.ErrorAsync($"Cleanup {cleanupInfo.FullPath} failed.", ex);
                     }
                 }
             }, _cancellationToken);
 
             return task;
+        }
+
+        private void CleanupCore(CleanupInfo cleanupInfo)
+        {
+            if (cleanupInfo.IsFile)
+            {
+                if (File.Exists(cleanupInfo.FullPath))
+                {
+                    File.Delete(cleanupInfo.FullPath);
+                }
+
+                Interlocked.Increment(ref _affectedFiles);
+            }
+            else
+            {
+                Directory.Delete(cleanupInfo.FullPath, true);
+            }
         }
 
         private Task CreateSyncTask()
@@ -137,39 +177,11 @@ namespace DirSync.Executor
                     var currentFile = Path.GetRelativePath(_options.SourceDir, fileSyncInfo.Src);
                     try
                     {
-                        if (!(Activator.CreateInstance(ProgressBarType) is ICopyProgress bar))
-                        {
-                            throw new ApplicationException($"Invalid progress bar implementation: {ProgressBarType}");
-                        }
-
-                        var fileCopyUtil =
-                            new FileCopyUtil(fileSyncInfo.Src, fileSyncInfo.Target, fileSyncInfo.Overwrite);
-
-                        var stopwatch = Stopwatch.StartNew();
-                        await fileCopyUtil.CopyAsync(
-                            async () =>
-                            {
-                                await bar.InitAsync($"{currentFile} ({ByteSize.FromBytes(fileCopyUtil.TotalBytes)})");
-                            },
-                            async e =>
-                            {
-                                if (e != null)
-                                {
-                                    await Logger.ErrorAsync($"Error while copying {currentFile}: {e.Message}");
-                                }
-                                else
-                                {
-                                    await bar.CompleteAsync(
-                                        "Finished",
-                                        stopwatch.Elapsed,
-                                        (double) fileCopyUtil.TotalBytes / stopwatch.ElapsedMilliseconds);
-                                    Interlocked.Increment(ref _affectedFiles);
-                                }
-                            }, _cancellationToken);
+                        await SyncCoreAsync(fileSyncInfo, currentFile);
                     }
                     catch (Exception ex)
                     {
-                        await Logger.ErrorAsync($"Error while copying {currentFile}: {ex.Message}");
+                        await Logger.ErrorAsync($"Error while copying {currentFile}.", ex);
                     }
                     finally
                     {
@@ -179,6 +191,36 @@ namespace DirSync.Executor
             }, _cancellationToken);
 
             return task;
+        }
+
+        private async Task SyncCoreAsync(FileSyncInfo fileSyncInfo, string currentFile)
+        {
+            if (!(Activator.CreateInstance(ProgressBarType) is ICopyProgress bar))
+            {
+                throw new ApplicationException($"Invalid progress bar implementation: {ProgressBarType}");
+            }
+
+            var fileCopyUtil =
+                new FileCopyUtil(fileSyncInfo.Src, fileSyncInfo.Target, fileSyncInfo.Overwrite);
+
+            var stopwatch = Stopwatch.StartNew();
+            await fileCopyUtil.CopyAsync(
+                async () => { await bar.InitAsync($"{currentFile} ({ByteSize.FromBytes(fileCopyUtil.TotalBytes)})"); },
+                async e =>
+                {
+                    if (e != null)
+                    {
+                        await Logger.ErrorAsync($"Copying {currentFile} failed.", e);
+                    }
+                    else
+                    {
+                        await bar.CompleteAsync(
+                            "Finished",
+                            stopwatch.Elapsed,
+                            (double) fileCopyUtil.TotalBytes / stopwatch.ElapsedMilliseconds);
+                        Interlocked.Increment(ref _affectedFiles);
+                    }
+                }, _cancellationToken);
         }
 
         private void CleanupTargetDir(string src, string target)
@@ -218,29 +260,6 @@ namespace DirSync.Executor
         private async Task ExecuteCoreAsync(string src, string target, bool overwrite, bool strict)
         {
             _cancellationToken.ThrowIfCancellationRequested();
-            if (_options.Include != null && _options.Include.Any())
-            {
-                _includePatterns = new List<Glob>();
-                foreach (var includePattern in _options.Include)
-                {
-                    if (!string.IsNullOrWhiteSpace(includePattern))
-                    {
-                        _includePatterns.Add(Glob.Parse(includePattern));
-                    }
-                }
-            }
-
-            if (_options.Exclude != null && _options.Exclude.Any())
-            {
-                _excludePatterns = new List<Glob>();
-                foreach (var excludePattern in _options.Exclude)
-                {
-                    if (!string.IsNullOrWhiteSpace(excludePattern))
-                    {
-                        _excludePatterns.Add(Glob.Parse(excludePattern));
-                    }
-                }
-            }
 
             Directory.CreateDirectory(target);
             foreach (var dir in Directory.EnumerateDirectories(src, "*", SearchOption.TopDirectoryOnly))
@@ -255,12 +274,13 @@ namespace DirSync.Executor
                 _cancellationToken.ThrowIfCancellationRequested();
                 _srcFileCount++;
 
+                var fileName = Path.GetFileName(file);
                 if (_excludePatterns != null && _excludePatterns.Any())
                 {
                     var matched = false;
                     foreach (var excludePattern in _excludePatterns)
                     {
-                        if (excludePattern.IsMatch(Path.GetFileName(file)))
+                        if (excludePattern.IsMatch(fileName))
                         {
                             matched = true;
                             break;
@@ -278,7 +298,7 @@ namespace DirSync.Executor
                     var matched = false;
                     foreach (var includePattern in _includePatterns)
                     {
-                        if (includePattern.IsMatch(Path.GetFileName(file)))
+                        if (includePattern.IsMatch(fileName))
                         {
                             matched = true;
                             break;
@@ -291,7 +311,7 @@ namespace DirSync.Executor
                     }
                 }
 
-                var targetFilePath = Path.Combine(target, Path.GetFileName(file));
+                var targetFilePath = Path.Combine(target, fileName);
                 var syncInfo = new FileSyncInfo(file, targetFilePath);
                 if (!File.Exists(targetFilePath))
                 {

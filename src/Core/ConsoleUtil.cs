@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Threading.Tasks;
 using DirSync.Model;
 
@@ -10,8 +11,10 @@ namespace DirSync.Core
             bool stdErr = false,
             params ConsoleMessage[] messages)
         {
+            var writer = stdErr ? Console.Error : Console.Out;
             foreach (var consoleMessage in messages)
             {
+                await WriteTimestampAsync(writer, consoleMessage.Message, consoleMessage.Timestamp);
                 if (consoleMessage.BackgroundColor.HasValue)
                 {
                     Console.BackgroundColor = consoleMessage.BackgroundColor.Value;
@@ -22,14 +25,7 @@ namespace DirSync.Core
                     Console.ForegroundColor = consoleMessage.ForegroundColor.Value;
                 }
 
-                if (stdErr)
-                {
-                    await Console.Error.WriteAsync(consoleMessage.Message);
-                }
-                else
-                {
-                    await Console.Out.WriteAsync(consoleMessage.Message);
-                }
+                await writer.WriteAsync(consoleMessage.Message);
 
                 if (consoleMessage.BackgroundColor.HasValue ||
                     consoleMessage.ForegroundColor.HasValue)
@@ -44,14 +40,22 @@ namespace DirSync.Core
             params ConsoleMessage[] messages)
         {
             await WriteAsync(stdErr, messages);
-            if (stdErr)
+
+            var writer = stdErr ? Console.Error : Console.Out;
+            await writer.WriteAsync(Environment.NewLine);
+        }
+
+        private static async Task WriteTimestampAsync(TextWriter writer, string message, DateTime timestamp)
+        {
+            if (string.IsNullOrEmpty(message))
             {
-                await Console.Error.WriteAsync(Environment.NewLine);
+                return;
             }
-            else
-            {
-                await Console.Out.WriteAsync(Environment.NewLine);
-            }
+
+            Console.ForegroundColor = ConsoleColor.DarkGray;
+            await writer.WriteAsync($"[{timestamp:dd/MM HH:mm:ss}]");
+            Console.ResetColor();
+            await writer.WriteAsync(" ");
         }
     }
 }

@@ -14,7 +14,7 @@ namespace DirSync.Core
             string target,
             CancellationToken cancellationToken = default)
         {
-            // The path have to be exactly same, as for *ngix systems path is case sensitive.
+            // The path have to be exactly same, as for *nix systems path is case sensitive.
             if (string.Equals(source, target))
             {
                 return false;

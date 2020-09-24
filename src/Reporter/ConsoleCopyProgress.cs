@@ -12,7 +12,7 @@ namespace DirSync.Reporter
         public async Task CompleteAsync(string message, TimeSpan elapsed, double ratesInBytesPerMs)
         {
             var consoleMessage = new ConsoleMessage(
-                $"{message}. Elapsed: {elapsed:hh\\:mm\\:ss}, average rate: {ByteSize.FromBytes(ratesInBytesPerMs * 1000)}/s",
+                $"{message}. Elapsed: {elapsed:hh\\:mm\\:ss}, average speed: {ByteSize.FromBytes(ratesInBytesPerMs * 1000)}/s",
                 ConsoleColor.DarkGreen);
             await ConsoleUtil.WriteLineAsync(messages: consoleMessage);
         }
