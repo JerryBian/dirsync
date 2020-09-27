@@ -4,8 +4,8 @@ using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 using CommandLine;
-using DirSync.Executor;
 using DirSync.Reporter;
+using DirSync.Service;
 
 namespace DirSync
 {
@@ -73,12 +73,12 @@ namespace DirSync
 
         private static async Task ExecuteAsync(Options options)
         {
-            var executor = new SyncExecutor(options, CancellationTokenSource.Token)
+            var executor = new MainService(options, CancellationTokenSource.Token)
             {
                 Logger = new ConsoleLogger(),
-                ProgressBarType = typeof(ConsoleCopyProgress)
+                ProgressBarType = typeof(ConsoleSyncProgress)
             };
-            await executor.ExecuteAsync();
+            await executor.RunAsync();
         }
     }
 }

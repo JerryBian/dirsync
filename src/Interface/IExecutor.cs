@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Threading.Tasks;
-using DirSync.Model;
 
 namespace DirSync.Interface
 {
@@ -10,6 +9,6 @@ namespace DirSync.Interface
 
         Type ProgressBarType { get; set; }
 
-        Task<ExecutorResult> ExecuteAsync();
+        Task ExecuteAsync();
     }
 }

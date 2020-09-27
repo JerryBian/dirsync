@@ -4,7 +4,7 @@ using DirSync.Interface;
 
 namespace DirSync.Reporter
 {
-    public class VoidCopyProgress : ICopyProgress
+    public class VoidSyncProgress : ISyncProgress
     {
         public async Task CompleteAsync(string message, TimeSpan elapsed, double ratesInBytesPerMs)
         {

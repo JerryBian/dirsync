@@ -7,7 +7,7 @@ using DirSync.Model;
 
 namespace DirSync.Reporter
 {
-    public class ConsoleCopyProgress : ICopyProgress
+    public class ConsoleSyncProgress : ISyncProgress
     {
         public async Task CompleteAsync(string message, TimeSpan elapsed, double ratesInBytesPerMs)
         {
