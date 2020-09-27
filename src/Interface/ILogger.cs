@@ -1,14 +1,15 @@
 ﻿using System;
-using System.Threading.Tasks;
 
 namespace DirSync.Interface
 {
     public interface ILogger
     {
-        Task InfoAsync(string message);
+        void Verbose(string message);
 
-        Task WarnAsync(string message);
+        void Info(string message);
 
-        Task ErrorAsync(string message, Exception exception = null);
+        void Warn(string message);
+
+        void Error(string message, Exception exception = null);
     }
 }

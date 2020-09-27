@@ -33,6 +33,9 @@ namespace DirSync
 
         [Option("config")] public string Config { get; set; }
 
+        [Option('v', "verbose")]
+        public bool Verbose { get; set; }
+
         [Usage(ApplicationAlias = "dirsync")] public static IEnumerable<Example> Examples => new Example[] { };
 
         public List<SyncConfig> SyncConfigs { get; set; } = new List<SyncConfig>();

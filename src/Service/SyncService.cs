@@ -75,11 +75,7 @@ namespace DirSync.Service
                     }
                     catch (Exception ex)
                     {
-                        await _logger.ErrorAsync($"Error while copying {currentFile}.", ex);
-                    }
-                    finally
-                    {
-                        await _logger.InfoAsync(string.Empty);
+                        _logger.Error($"Error while copying {currentFile}.", ex);
                     }
                 }
             }, _cancellationToken);
@@ -102,7 +98,7 @@ namespace DirSync.Service
                 {
                     if (e != null)
                     {
-                        await _logger.ErrorAsync($"Copying {currentFile} failed.", e);
+                        _logger.Error($"Copying {currentFile} failed.", e);
                     }
                     else
                     {

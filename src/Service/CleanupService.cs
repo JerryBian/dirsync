@@ -67,7 +67,7 @@ namespace DirSync.Service
                     }
                     catch (Exception ex)
                     {
-                        await _logger.ErrorAsync($"Cleanup {cleanupInfo.FullPath} failed.", ex);
+                        _logger.Error($"Cleanup {cleanupInfo.FullPath} failed.", ex);
                     }
                 }
             }, _cancellationToken);

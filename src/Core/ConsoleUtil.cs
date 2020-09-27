@@ -52,7 +52,7 @@ namespace DirSync.Core
                 return;
             }
 
-            Console.ForegroundColor = ConsoleColor.DarkGray;
+            Console.ForegroundColor = ConsoleColor.DarkCyan;
             await writer.WriteAsync($"[{timestamp:dd/MM HH:mm:ss}]");
             Console.ResetColor();
             await writer.WriteAsync(" ");

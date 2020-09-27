@@ -45,20 +45,20 @@ namespace DirSync.Service
                 if (string.IsNullOrEmpty(_options.SourceDir) ||
                     string.IsNullOrWhiteSpace(_options.SourceDir))
                 {
-                    await Logger.ErrorAsync("Missing source directory, please see --help.");
+                    Logger.Error("Missing source directory, please see --help.");
                     return result;
                 }
 
                 if (!Directory.Exists(_options.SourceDir))
                 {
-                    await Logger.ErrorAsync($"Source directory doesn't exist: {_options.SourceDir}.");
+                    Logger.Error($"Source directory doesn't exist: {_options.SourceDir}.");
                     return result;
                 }
 
                 if (string.IsNullOrEmpty(_options.TargetDir) ||
                     string.IsNullOrWhiteSpace(_options.TargetDir))
                 {
-                    await Logger.ErrorAsync("Missing target directory, please see --help.");
+                    Logger.Error("Missing target directory, please see --help.");
                     return result;
                 }
 
@@ -110,7 +110,7 @@ namespace DirSync.Service
 
             result.Succeed = true;
             stopwatch.Stop();
-            await Logger.InfoAsync($"All done. Elapsed: {stopwatch.Elapsed:hh\\:mm\\:ss}.");
+            Logger.Info($"All done. Elapsed: {stopwatch.Elapsed:hh\\:mm\\:ss}.");
             return result;
         }
 
@@ -119,7 +119,7 @@ namespace DirSync.Service
             // supplied syncConfig file
             if (!File.Exists(_options.Config))
             {
-                await Logger.ErrorAsync($"SyncConfig file not exists: {_options.Config}");
+                Logger.Error($"SyncConfig file not exists: {_options.Config}");
                 return false;
             }
 
@@ -131,7 +131,7 @@ namespace DirSync.Service
                         cancellationToken: _cancellationToken);
                 if (!configs.Any())
                 {
-                    await Logger.ErrorAsync($"Empty content in syncConfig: {_options.Config}");
+                    Logger.Error($"Empty content in syncConfig: {_options.Config}");
                     return false;
                 }
 
@@ -139,21 +139,21 @@ namespace DirSync.Service
                 {
                     if (_options.SyncConfigs.Exists(m => m == config))
                     {
-                        await Logger.WarnAsync(
+                        Logger.Warn(
                             $"Found duplicate syncConfig. Src={config.Source}, Target={config.Target}. Skip.");
                         continue;
                     }
 
                     if (_options.SyncConfigs.Exists(m => m.Target == config.Target) && _options.Cleanup)
                     {
-                        await Logger.ErrorAsync(
+                        Logger.Error(
                             $"Multiple syncConfig for same target detected: {config.Target}, -c or --cleanup is not supported.");
                         return false;
                     }
 
                     if (!Directory.Exists(config.Source))
                     {
-                        await Logger.ErrorAsync($"Source directory doesn't exist: {config.Source}. Skip.");
+                        Logger.Error($"Source directory doesn't exist: {config.Source}. Skip.");
                         continue;
                     }
 
@@ -162,7 +162,7 @@ namespace DirSync.Service
             }
             catch (Exception ex)
             {
-                await Logger.ErrorAsync($"Parsing syncConfig file failed: {_options.Config}", ex);
+                Logger.Error($"Parsing syncConfig file failed: {_options.Config}", ex);
                 return false;
             }
 
