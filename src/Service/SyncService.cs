@@ -1,4 +1,8 @@
-﻿using System;
+﻿using ByteSizeLib;
+using DirSync.Core;
+using DirSync.Interface;
+using DirSync.Model;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -6,10 +10,6 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using ByteSizeLib;
-using DirSync.Core;
-using DirSync.Interface;
-using DirSync.Model;
 
 namespace DirSync.Service
 {
@@ -105,10 +105,10 @@ namespace DirSync.Service
                         await bar.CompleteAsync(
                             "Finished",
                             stopwatch.Elapsed,
-                            (double) fileCopyUtil.TotalBytes / stopwatch.ElapsedMilliseconds);
+                            (double)fileCopyUtil.TotalBytes / stopwatch.ElapsedMilliseconds);
                         result.TargetAffectedFileCount++;
                     }
-                }, _cancellationToken);
+                });
         }
 
         private async Task IngestCoreAsync(SyncConfig syncConfig, string src, string target, SyncIngestResult result)

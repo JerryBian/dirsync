@@ -1,9 +1,9 @@
-﻿using System;
-using System.Threading.Tasks;
-using ByteSizeLib;
+﻿using ByteSizeLib;
 using DirSync.Core;
 using DirSync.Interface;
 using DirSync.Model;
+using System;
+using System.Threading.Tasks;
 
 namespace DirSync.Reporter
 {

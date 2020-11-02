@@ -27,10 +27,10 @@ namespace DirSync.Core
                 return false;
             }
 
-            var iterations = (int) Math.Ceiling((double) fileInfo1.Length / MaxBytesScan);
+            var iterations = (int)Math.Ceiling((double)fileInfo1.Length / MaxBytesScan);
             await using var f1 = fileInfo1.OpenRead();
             await using var f2 = fileInfo2.OpenRead();
-            var maxBytesScan = fileInfo1.Length < MaxBytesScan ? (int) fileInfo1.Length : MaxBytesScan;
+            var maxBytesScan = fileInfo1.Length < MaxBytesScan ? (int)fileInfo1.Length : MaxBytesScan;
             var first = new byte[maxBytesScan];
             var second = new byte[maxBytesScan];
 

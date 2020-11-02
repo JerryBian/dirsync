@@ -1,6 +1,5 @@
 ﻿using System;
 using System.IO;
-using System.Threading;
 using System.Threading.Tasks;
 
 namespace DirSync.Core
@@ -16,30 +15,19 @@ namespace DirSync.Core
             _src = src;
             _target = target;
             _overwrite = overwrite;
+            TotalBytes = new FileInfo(src).Length;
         }
 
         public long TotalBytes { get; set; }
 
         public async Task CopyAsync(
             Action copyStarted,
-            Action<Exception> copyCompleted,
-            CancellationToken cancellationToken = default)
+            Action<Exception> copyCompleted)
         {
             try
             {
-                await using (var source = new FileStream(_src, FileMode.Open, FileAccess.Read))
-                {
-                    TotalBytes = source.Length;
-                    if (_overwrite && File.Exists(_target))
-                    {
-                        File.Delete(_target);
-                    }
-
-                    await using var dest = new FileStream(_target, FileMode.Create, FileAccess.Write);
-                    copyStarted();
-                    await source.CopyToAsync(dest, cancellationToken);
-                }
-
+                copyStarted();
+                File.Copy(_src, _target, _overwrite);
                 copyCompleted(null);
             }
             catch (Exception ex)

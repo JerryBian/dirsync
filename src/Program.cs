@@ -1,12 +1,13 @@
 ﻿#nullable enable
-using System;
-using System.Diagnostics;
-using System.Threading;
-using System.Threading.Tasks;
 using CommandLine;
 using DirSync.Model;
 using DirSync.Reporter;
 using DirSync.Service;
+using System;
+using System.Diagnostics;
+using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace DirSync
 {
@@ -33,7 +34,24 @@ namespace DirSync
                 c.HelpWriter = Console.Error;
                 c.IgnoreUnknownArguments = true;
             });
-            await parser.ParseArguments<Options>(args).WithParsedAsync(ExecuteAsync);
+            await parser.ParseArguments<Options>(args).WithParsedAsync(async o =>
+            {
+                var startTime = DateTime.Now;
+                var result = await ExecuteAsync(o);
+                var stopTime = DateTime.Now;
+                // generate reports
+                var sb = new StringBuilder();
+                sb.AppendLine("<ul>");
+                sb.AppendLine($"<li>Start: {startTime}</li>");
+                sb.AppendLine($"<li>End: {stopTime}</li>");
+                sb.AppendLine($"<li>Elapsed: {stopTime - startTime}</li>");
+                sb.AppendLine($"Succeed: {result.Succeed}");
+                if (result.Error != null)
+                {
+                    sb.AppendLine($"Error: {result.Error}");
+                }
+                sb.AppendLine("</ul>");
+            });
         }
 
         private static async void TaskSchedulerOnUnobservedTaskException(object? sender,
@@ -72,7 +90,7 @@ namespace DirSync
             CancellationTokenSource.Cancel();
         }
 
-        private static async Task ExecuteAsync(Options options)
+        private static async Task<MainResult> ExecuteAsync(Options options)
         {
             await using var logger = new ConsoleLogger(options.Verbose ? LogLevel.Verbose : LogLevel.Info);
             var executor = new MainService(options, CancellationTokenSource.Token)
@@ -81,7 +99,7 @@ namespace DirSync
                 ProgressBarType = typeof(ConsoleSyncProgress)
             };
 
-            await executor.RunAsync();
+            return await executor.RunAsync();
         }
     }
 }

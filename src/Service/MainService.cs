@@ -1,4 +1,7 @@
-﻿using System;
+﻿using DirSync.Interface;
+using DirSync.Model;
+using DirSync.Reporter;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -6,9 +9,6 @@ using System.Linq;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
-using DirSync.Interface;
-using DirSync.Model;
-using DirSync.Reporter;
 
 namespace DirSync.Service
 {
@@ -62,7 +62,7 @@ namespace DirSync.Service
                     return result;
                 }
 
-                _options.SyncConfigs.Add(new SyncConfig {Source = _options.SourceDir, Target = _options.TargetDir});
+                _options.SyncConfigs.Add(new SyncConfig { Source = _options.SourceDir, Target = _options.TargetDir });
             }
 
             var syncIngestTasks = new List<Task<SyncIngestResult>>();

@@ -1,5 +1,5 @@
-﻿using System;
-using DirSync.Interface;
+﻿using DirSync.Interface;
+using System;
 
 namespace DirSync.Reporter
 {

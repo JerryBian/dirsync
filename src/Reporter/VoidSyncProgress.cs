@@ -1,6 +1,6 @@
-﻿using System;
+﻿using DirSync.Interface;
+using System;
 using System.Threading.Tasks;
-using DirSync.Interface;
 
 namespace DirSync.Reporter
 {

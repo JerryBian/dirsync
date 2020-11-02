@@ -1,7 +1,7 @@
-﻿using System;
+﻿using DirSync.Model;
+using System;
 using System.IO;
 using System.Threading.Tasks;
-using DirSync.Model;
 
 namespace DirSync.Core
 {

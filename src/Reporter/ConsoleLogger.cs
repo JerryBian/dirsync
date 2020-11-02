@@ -1,10 +1,10 @@
-﻿using System;
+﻿using DirSync.Core;
+using DirSync.Interface;
+using DirSync.Model;
+using System;
 using System.Collections.Concurrent;
 using System.Threading;
 using System.Threading.Tasks;
-using DirSync.Core;
-using DirSync.Interface;
-using DirSync.Model;
 
 namespace DirSync.Reporter
 {

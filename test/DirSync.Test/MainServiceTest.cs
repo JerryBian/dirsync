@@ -1,9 +1,9 @@
-﻿using System;
+﻿using DirSync.Service;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using DirSync.Service;
 using Xunit;
 
 namespace DirSync.Test
@@ -19,7 +19,7 @@ namespace DirSync.Test
         {
             _src = TestHelper.GetRandomFolderPath();
             _target = TestHelper.GetRandomFolderPath();
-            _options = new Options {SourceDir = _src, TargetDir = _target};
+            _options = new Options { SourceDir = _src, TargetDir = _target };
             _mainService = new MainService(_options);
         }
 
@@ -185,7 +185,7 @@ namespace DirSync.Test
             await TestHelper.CreateRandomFileAsync(_target, 6, 10, new byte[1000]);
             await TestHelper.CreateRandomFileAsync(_src, 1, 10, new byte[1000]);
 
-            _options.Include = new List<string> {"2*", "3*"};
+            _options.Include = new List<string> { "2*", "3*" };
             var executorResult = await _mainService.RunAsync();
             Assert.True(executorResult.Succeed);
             Assert.Equal(2, executorResult.TargetAffectedFileCount.First().Value);
@@ -201,7 +201,7 @@ namespace DirSync.Test
             await TestHelper.CreateRandomFileAsync(_target, 6, 10, new byte[1000]);
             await TestHelper.CreateRandomFileAsync(_src, 1, 10, new byte[1000]);
 
-            _options.Exclude = new List<string> {"2*"};
+            _options.Exclude = new List<string> { "2*" };
             var executorResult = await _mainService.RunAsync();
             Assert.True(executorResult.Succeed);
             Assert.Equal(3, executorResult.TargetAffectedFileCount.First().Value);
@@ -217,8 +217,8 @@ namespace DirSync.Test
             await TestHelper.CreateRandomFileAsync(_target, 6, 10, new byte[1000]);
             await TestHelper.CreateRandomFileAsync(_src, 1, 18, new byte[1000]);
 
-            _options.Exclude = new List<string> {"12*"};
-            _options.Include = new List<string> {"2*"};
+            _options.Exclude = new List<string> { "12*" };
+            _options.Include = new List<string> { "2*" };
             var executorResult = await _mainService.RunAsync();
             Assert.True(executorResult.Succeed);
             Assert.Equal(1, executorResult.TargetAffectedFileCount.First().Value);
