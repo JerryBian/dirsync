@@ -11,7 +11,7 @@ A tiny cross platform utility tool for sync files between two directories.
 Make sure .NET Core 3.1 runtime is installed. Open command line tool:
 
 ```
-dotnet install -g dirsync
+dotnet tool install --global DirSync
 ```
 
 After the installation, check current version.
