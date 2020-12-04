@@ -31,15 +31,20 @@ namespace DirSync
         [Option('e', "exclude", HelpText = "Use glob pattern to exclude files. Default: no files to exclude. Note: this has higher priority over -i/--include.", Separator = ' ')]
         public IEnumerable<string> Exclude { get; set; }
 
-        [Option("config", HelpText = "Json configuration file for specifying multiple source-target mappings.")] 
+        [Option("config", HelpText = "Json configuration file for specifying multiple source-target mappings.")]
         public string Config { get; set; }
 
         [Option('v', "verbose")]
         public bool Verbose { get; set; }
 
+        [Option('n', "newer", HelpText = "Only copy files whose modification date is newer than the specified timestamp,default: 0.")]
+        public long NewerModifyTimeSpam { get; set; }
+
         [Usage(ApplicationAlias = "dirsync")] public static IEnumerable<Example> Examples => new Example[] { };
 
         public List<SyncConfig> SyncConfigs { get; set; } = new List<SyncConfig>();
+
+        public DateTime NewerModifyDateTime => new DateTime(1970, 1, 1, 0, 0, 0, 0).AddSeconds(NewerModifyTimeSpam).ToLocalTime();
 
         public Lazy<List<Glob>> IncludePatterns
         {

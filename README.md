@@ -81,6 +81,10 @@ While there is already same file name exists in target directory, it will do bin
 
 Make sure target directory has exactly same files as source.
 
+`dirsync -n 1607093968 /tmp/src /tmp/target`
+
+Only copy files whose modification date is newer than '1607093968(timestamp)' '2020/12/4 22:59:28(datetime)'.
+
 `dirsync -f -c /tmp/src /tmp/target`
 
 Pass in multiple source-target mappings in configuration file. If this configuration file is specified, the source and target position arguments will be ignored.
