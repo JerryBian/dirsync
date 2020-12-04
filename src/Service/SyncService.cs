@@ -165,6 +165,12 @@ namespace DirSync.Service
                     }
                 }
 
+                var fileInfo = new FileInfo(file);
+                if (fileInfo.LastWriteTime < _options.NewerModifyDateTime)
+                {
+                    continue;
+                }
+
                 var targetFilePath = Path.Combine(target, fileName);
                 var syncInfo = new SyncFileInfo(syncConfig, file, targetFilePath);
                 if (!File.Exists(targetFilePath))

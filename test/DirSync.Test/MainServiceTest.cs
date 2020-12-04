@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
 
@@ -225,6 +226,23 @@ namespace DirSync.Test
             Assert.Equal(0, executorResult.SrcDirCount.First().Value);
             Assert.Equal(17, executorResult.SrcFileCount.First().Value);
             Assert.Equal(6, Directory.GetFiles(_target).Length);
+        }
+
+        [Fact]
+        public async Task Test13_Newer()
+        {  
+            await TestHelper.CreateRandomFileAsync(_src, 1, 5, new byte[1000]);
+            Thread.Sleep(1500);
+            _options.NewerModifyTimeSpam = new DateTimeOffset(DateTime.UtcNow).ToUnixTimeSeconds();
+            await TestHelper.CreateRandomFileAsync(_src, 5, 18, new byte[1000]);
+
+
+            var executorResult = await _mainService.RunAsync();
+            Assert.True(executorResult.Succeed);
+            Assert.Equal(13, executorResult.TargetAffectedFileCount.First().Value);
+            Assert.Equal(0, executorResult.SrcDirCount.First().Value);
+            Assert.Equal(17, executorResult.SrcFileCount.First().Value);
+            Assert.Equal(13, Directory.GetFiles(_target).Length);
         }
     }
 }
