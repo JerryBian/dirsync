@@ -1,3 +1,5 @@
+## This project is marked as Archive, please use [tur](https://github.com/JerryBian/tur) instead.
+
 A tiny cross platform utility tool for sync files between two directories.
 
 ### Features
